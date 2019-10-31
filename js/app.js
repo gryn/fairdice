@@ -1,13 +1,15 @@
 var AppView = Backbone.View.extend({
 
 	el: '#container',
-	
+
 	events: {
-		'change #results': 'changeResults'	
+		'change #results': 'changeResults'
 	},
 
-	initialize: function() {
-		this.recorder = new Recorder();
+	// sides is array of labels
+	initialize: function(sides) {
+		this.sides = sides;
+		this.recorder = new Recorder(this.sides);
 		this.listenTo(this.recorder.questionaire, 'complete', this.questionaireComplete);
 		this.results = [];
 		this.$results = $('#results');
@@ -18,23 +20,27 @@ var AppView = Backbone.View.extend({
 	render: function() {
 		this.$results.val( this.results.join(', ') );
 	},
-	
+
 	questionaireComplete: function() {
 		this.results.push(this.recorder.questionaire.questions.at(0).get('answer'));
-		
+
 		this.resultsUpdated();
 		this.render();
 	},
-	
+
 	resultsUpdated: function() {
+		var weights = {};
+		for (var i = 0; i < this.sides.length; i++) {
+			weights[this.sides[i]] = 1;
+		}
 		var data = {
 			observations: this.results,
-			weights: { '1': 1, '2': 1, '3': 1, '4': 1, '5': 1, '6': 1 }
+			weights: weights,
 		};
 
 	  AppView.debug(data.observations.length, JSON.stringify(MathEx.chiTest(data)));
 	},
-	
+
 	changeResults: function() {
 		this.results = _.reject(
 			this.$results.val().split(/\W+/),
@@ -51,27 +57,36 @@ AppView.debug = function() {
 
 var Recorder = Backbone.View.extend({
 	el: '#questionaire',
-	
+
 	events: {
 		'click button': 'clickButton'
 	},
-	
-	initialize: function() {
-		this.questionaire = new Questionaire();
+
+	initialize: function(sides) {
+		this.sides = sides;
+		this.questionaire = new Questionaire({ sides: this.sides });
 		this.questionaireState = new QuestionaireState();
-		
+
 		this.resetQuestionaire();
-		
+
 		this.listenTo(this.questionaire, 'change', this.questionaireChange);
 		this.listenTo(this.questionaireState, 'change', this.questionaireStateChange);
-		
+
 		this.render();
 	},
-	
+
 	resetQuestionaire: function() {
+		var defaultQuestionaireData = {
+			questions: [
+				{
+					kind: 'regular',
+					sides: this.sides
+				}
+			]
+		};
 		this.questionaire.parse(defaultQuestionaireData);
 	},
-	
+
 	render: function() {
 		// just assume some things
 		var $question = this.$('#question');
@@ -87,19 +102,19 @@ var Recorder = Backbone.View.extend({
 			$question.append(button);
 		}
 	},
-	
+
 	currentQuestion: function() {
 		return this.questionaire.questions.at(this.questionaireState.get('activeQuestion'));
 	},
-	
+
 	clickButton: function(e) {
 		var button = $(e.currentTarget);
 		var value = button.data('value');
-		
+
 		var question = this.currentQuestion();
 		question.set('answer', value);
 	},
-	
+
 	questionaireChange: function() {
 		// assume any change to a question indicates the question is complete
 		this.questionaireState.nextQuestion();
@@ -114,9 +129,9 @@ var Recorder = Backbone.View.extend({
 			this.questionaire.trigger('complete');
 			this.resetQuestionaire();
 		}
-		
+
 		this.render();
-	}	
+	}
 });
 
 var Questionaire = Backbone.Model.extend({
@@ -124,9 +139,9 @@ var Questionaire = Backbone.Model.extend({
 	},
 	constructor: function(attributes, options) {
 		this.questions =  new QuestionCollection();
-		
+
 		this.listenTo(this.questions, 'change', this.questionsChange);
-		
+
 		if(!options) options = {};
 		options.parse = true;
 
@@ -168,7 +183,7 @@ var Question = Backbone.Model.extend({
 	defaults: {
 		answer: null
 	},
-	
+
 	allowedResponses: function() {
 		return [];
 	}
@@ -177,30 +192,17 @@ var Question = Backbone.Model.extend({
 var DiceRollQuestion = Question.extend({
 	defaults: {
 		kind: 'regular',
-		sides: 6
+		sides: [1,2,3,4,5,6]
 	},
-	
+
 	allowedResponses: function() {
 		var sides = this.get('sides');
 		var kind = this.get('kind');
 		if(sides < 2 || kind != 'regular') {
 			return Question.prototype.allowedResponses.apply(this, arguments);
 		}
-		
-		var responses = Array(sides);
-		for(var i = 0; i < sides; i++) {
-			responses[i] = i + 1;
-		}
-		
-		return responses;
+
+		return sides.slice(0);
 	}
 });
 
-var defaultQuestionaireData = {
-	questions: [
-		{
-			kind: 'regular',
-			sides: 6
-		}
-	]
-};

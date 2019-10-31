@@ -3,12 +3,12 @@
 
 <head>
 	<meta charset="utf-8">
-	
+
 	<meta name="viewport" content="width=device-width" />
-	
-	<script src="/lib/underscore.js"></script>
-	<script src="/lib/jquery.js"></script>
-	<script src="/lib/backbone.js"></script>
+
+	<script src="./lib/underscore.js"></script>
+	<script src="./lib/jquery.js"></script>
+	<script src="./lib/backbone.js"></script>
 </head>
 
 <body>
@@ -18,10 +18,10 @@
 			</div>
 		</div>
 	</div>
-	
+
 	<pre id="debug">
 	</pre>
-	
+
 	<style>
 		html, body {
 			margin: 0;
@@ -63,12 +63,12 @@
 			overflow: scroll;
 		}
 	</style>
-	
-	<script src="/js/math.js"></script>
-	<script src="/js/app.js"></script>
+
+	<script src="./js/math.js"></script>
+	<script src="./js/app.js"></script>
 	<script>
 		$(function() {
-			var appView = new AppView();
+			var appView = new AppView(['red','blue','green','yellow','orange','brown']);
 		});
 	</script>
 </body>
