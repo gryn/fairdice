@@ -182,6 +182,18 @@ MathEx = {
 		
 		return result;
 	},
+
+	// makes something quick to feed chiTest
+	// e.g. makeSimpleDataFromAggregate({ 1: 2, 2: 3 })
+	// returns: { observations: ['1', '1', '2', '2', '2'], weights: { 1: 1, 2: 1 } }
+	makeSimpleDataFromAggregate: function(counts) {
+		var result = { observations: [], weights: {} };
+		Object.keys(counts).forEach(function(key) {
+			result.weights[key] = 1;
+			for (var i = 0; i < counts[key]; i++ ) result.observations.push(key);
+		});
+		return result;
+	},
 	
 	trapezoidIntegrate: function(x1, x2, func) {
 		var dx = 0.01;
